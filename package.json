@@ -1,0 +1,22 @@
+{
+  "name": "poule-pull",
+  "version": "1.0.0",
+  "description": "lecacacécacalepipicépipi",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bcalou/hitboxmaker-2021-vanille.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bcalou/hitboxmaker-2021-vanille/issues"
+  },
+  "homepage": "https://github.com/bcalou/hitboxmaker-2021-vanille#readme",
+  "dependencies": {
+    "socket.io": "^4.0.1"
+  }
+}
