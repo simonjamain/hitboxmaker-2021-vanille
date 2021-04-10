@@ -156,3 +156,9 @@ function updateChicken() {
     }
   });
 }
+
+// En attente d'utilisation
+function attachPlayerToChicken(player, chicken) {
+  player._isAttached = true;
+  this.matter.add.spring(player, chicken, 300, 0.2);
+}
