@@ -1,4 +1,4 @@
-import 'phaser';
+import "phaser";
 /**
  *
  * capter les inputs manette
@@ -17,6 +17,8 @@ import 'phaser';
  *
  * ajout joueur 2/n
  *
+ * faire que les poules sa descend
+ *
  * rembobiner / débobiner grappin
  *
  * pondre oeuf
@@ -34,12 +36,15 @@ import 'phaser';
  */
 
 var config = {
-  type: Phaser.AUTO,
+  type: Phaser.WEBGL,
   width: 1920,
   height: 1080,
-  backgroundColor: '#000000',
+  input: {
+    gamepad: true,
+  },
+  backgroundColor: "#000000",
   physics: {
-    default: 'matter',
+    default: "matter",
     matter: {
       gravity: {
         y: 0.8,
@@ -68,6 +73,8 @@ var game = new Phaser.Game(config);
 var rnd = Phaser.Math.RND;
 
 function create() {
+  createPlayers.call(this);
+
   //debug
   this.matter.add.mouseSpring();
   this.matter.world.setBounds(
@@ -82,7 +89,6 @@ function create() {
     true
   );
 
-  createPlayers.call(this);
   createChickens.call(this);
 }
 
@@ -91,32 +97,54 @@ function update(time, delta) {
     generateChicken.call(this);
   }
 
+  updatePlayers.call(this);
   updateChicken.call(this);
   updatePlayers.call(this);
 }
 
+function updatePlayers() {
+  this.players.forEach((player) => {
+    var pad = player._pad;
+
+    let leftStick = { x: pad.axes[0].getValue(), y: pad.axes[1].getValue() };
+
+    checkGrabberDistance.call(this, player);
+  });
+}
+
+function checkGrabberDistance(player) {
+  if (
+    player._grabber &&
+    Phaser.Math.Distance.BetweenPoints(
+      player.position,
+      player._grabber.position
+    ) > MAX_GRABBER_DISTANCE
+  ) {
+    this.matter.world.remove(player._grabber);
+    delete player._grabber;
+  }
+}
+
 function createPlayers() {
-  this.player = this.matter.add.rectangle(
+  this.players = [];
+  this.input.gamepad.once("connected", (pad) => {
+    console.log(pad);
+    createPlayer.call(this, pad);
+  });
+}
+
+function createPlayer(pad) {
+  var player = this.matter.add.rectangle(
     300,
     config.height - PLAYER_HEIGHT / 2,
     PLAYER_WIDTH,
     PLAYER_HEIGHT
   );
+  player._pad = pad;
 
-  setInterval(() => fire.call(this, this.player), 1000);
-}
-
-function updatePlayers() {
-  if (
-    this.player._grabber &&
-    Phaser.Math.Distance.BetweenPoints(
-      this.player.position,
-      this.player._grabber.position
-    ) > MAX_GRABBER_DISTANCE
-  ) {
-    this.matter.world.remove(this.player._grabber);
-    delete this.player._grabber;
-  }
+  this.players.push(player);
+  console.log(player);
+  setInterval(() => fire.call(this, player), 1000);
 }
 
 function fire(player) {
