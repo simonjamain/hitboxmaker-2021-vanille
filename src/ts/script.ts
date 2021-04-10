@@ -1,4 +1,4 @@
-import 'phaser';
+import "phaser";
 /**
  *
  * !!!OK!!! capter les inputs manette
@@ -42,12 +42,19 @@ var config = {
   type: Phaser.WEBGL,
   width: 1920,
   height: 1080,
+  scale: {
+    mode: Phaser.Scale.FIT,
+    parent: "poulepull",
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: 1920,
+    height: 1080,
+  },
   input: {
     gamepad: true,
   },
-  backgroundColor: '#000000',
+  backgroundColor: "#000000",
   physics: {
-    default: 'matter',
+    default: "matter",
     matter: {
       gravity: {
         y: 0.8,
@@ -65,9 +72,12 @@ var config = {
 
 const CAMERA_SPEED = 0.05;
 
-const CHICKEN_INTERVAL_MS = 1500;
+const CHICKEN_INTERVAL_MS = 600;
 const CHICKEN_SIZE = 100;
-const CHICKEN_TARGET_Y = { max: config.height - 300, min: CHICKEN_SIZE };
+const CHICKEN_TARGET_Y = {
+  max: config.height - 300,
+  min: -config.height - CHICKEN_SIZE,
+};
 const CHICKEN_WING_FORCE = { x: 0.03, y: -0.2 };
 
 const PLAYER_WIDTH = 100;
@@ -90,19 +100,27 @@ var rnd = Phaser.Math.RND;
 
 function preload() {
   for (let i = 1; i <= 9; i++) {
-    this.load.audio('cri_' + i, 'sound/cri_' + i + '.mp3');
+    this.load.audio("cri_" + i, "sound/cri_" + i + ".mp3");
   }
 }
 
 function create() {
-  //debug
-  this.text = this.add
-    .text(32, 32)
-    .setScrollFactor(0)
-    .setFontSize(32)
-    .setColor('#ffffff');
-  createPlayers.call(this);
+  //fullscreen avec F
+  var FKey = this.input.keyboard.addKey("F");
+  FKey.on(
+    "down",
+    function () {
+      if (this.scale.isFullscreen) {
+        this.scale.stopFullscreen();
+      } else {
+        this.scale.startFullscreen();
+      }
+    },
+    this
+  );
 
+  createPlayers.call(this);
+  this.cameras.main.scrollY = config.height;
   //debug
   this.matter.add.mouseSpring();
 
@@ -124,12 +142,6 @@ function create() {
 }
 
 function update(time, delta) {
-  this.text.setText([
-    'ScrollX: ' + this.cameras.main.scrollX,
-    'ScrollY: ' + this.cameras.main.scrollY,
-    'MidX: ' + this.cameras.main.midPoint.x,
-    'MidY: ' + this.cameras.main.midPoint.y,
-  ]);
   if (Math.random() < delta / CHICKEN_INTERVAL_MS) {
     generateChicken.call(this);
   }
@@ -137,11 +149,9 @@ function update(time, delta) {
   updatePlayers.call(this, delta);
   updateChicken.call(this);
 
-  if (time > 10000) {
-    this.cameras.main.setPosition(
-      0,
-      this.cameras.main.y + delta * CAMERA_SPEED
-    );
+  if (time > 3000) {
+    this.cameras.main.scrollY =
+      this.cameras.main.scrollY - delta * CAMERA_SPEED;
   }
 }
 
@@ -195,7 +205,7 @@ function checkGrabberDistance(player) {
 
 function createPlayers() {
   this.players = [];
-  this.input.gamepad.once('connected', (pad) => {
+  this.input.gamepad.once("connected", (pad) => {
     this.input.gamepad.gamepads.forEach((pad, index) => {
       createPlayer.call(this, pad, index);
     });
@@ -213,7 +223,6 @@ function createPlayer(pad, index) {
   );
   player._pad = pad;
 
-  this.cameras.main.startFollow(player.position); //todo : mouais
   this.players.push(player);
 }
 
@@ -225,7 +234,7 @@ function fire(player) {
     {
       onCollideCallback: (collision) => {
         // Si l'élément visé est chicken
-        if (collision.bodyA.label === 'chicken') {
+        if (collision.bodyA.label === "chicken") {
           if (player._grabber) {
             this.matter.world.remove(player._grabber);
             delete player._grabber;
@@ -291,8 +300,7 @@ function attachPlayerToChicken(player, chicken) {
   player._spring = this.matter.add.spring(
     player,
     chicken,
-    Phaser.Math.Distance.BetweenPoints(player.position, chicken.position) -
-      SPRING_INITIAL_GAP,
+    Phaser.Math.Distance.BetweenPoints(player.position, chicken.position),
     SPRING_STIFFNESS
   );
 
@@ -311,7 +319,10 @@ function createChickens() {
 }
 
 function generateChicken() {
-  var targetY = Phaser.Math.Between(CHICKEN_TARGET_Y.min, CHICKEN_TARGET_Y.max);
+  var targetY = Phaser.Math.Between(
+    CHICKEN_TARGET_Y.min + this.cameras.main.scrollY,
+    CHICKEN_TARGET_Y.max + this.cameras.main.scrollY
+  );
 
   var chickenX = rnd.pick([-CHICKEN_SIZE, config.width + CHICKEN_SIZE]);
 
@@ -323,7 +334,7 @@ function generateChicken() {
       collisionFilter: {
         group: this.chickenGroup,
       },
-      label: 'chicken',
+      label: "chicken",
     }
   );
 
