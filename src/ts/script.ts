@@ -153,7 +153,9 @@ function fire(player) {
       10,
       {
         onCollideCallback: (collision) => {
-          console.log(collision);
+          if (collision.bodyA.label === 'chicken') {
+            attachPlayerToChicken.call(this, player, collision.bodyA);
+          }
         },
       }
     );
@@ -164,7 +166,12 @@ function fire(player) {
 
 function attachPlayerToChicken(player, chicken) {
   player._isAttached = true;
-  this.matter.add.spring(player, chicken, 300, 0.2);
+  this.matter.add.spring(
+    player,
+    chicken,
+    Phaser.Math.Distance.BetweenPoints(player.position, chicken.position) - 100,
+    0.2
+  );
 }
 
 function createChickens() {
@@ -185,6 +192,7 @@ function generateChicken() {
       collisionFilter: {
         group: this.chickenGroup,
       },
+      label: 'chicken',
     }
   );
 
