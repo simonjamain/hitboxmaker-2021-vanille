@@ -62,6 +62,8 @@ const CHICKEN_WING_FORCE = { x: 0.03, y: -0.2 };
 const PLAYER_WIDTH = 100;
 const PLAYER_HEIGHT = 150;
 
+const MAX_GRABBER_DISTANCE = 700;
+
 var game = new Phaser.Game(config);
 var rnd = Phaser.Math.RND;
 
@@ -90,15 +92,48 @@ function update(time, delta) {
   }
 
   updateChicken.call(this);
+  updatePlayers.call(this);
 }
 
 function createPlayers() {
-  this.matter.add.rectangle(
+  this.player = this.matter.add.rectangle(
     300,
     config.height - PLAYER_HEIGHT / 2,
     PLAYER_WIDTH,
     PLAYER_HEIGHT
   );
+
+  setInterval(() => fire.call(this, this.player), 1000);
+}
+
+function updatePlayers() {
+  if (
+    this.player._grabber &&
+    Phaser.Math.Distance.BetweenPoints(
+      this.player.position,
+      this.player._grabber.position
+    ) > MAX_GRABBER_DISTANCE
+  ) {
+    this.matter.world.remove(this.player._grabber);
+    delete this.player._grabber;
+  }
+}
+
+function fire(player) {
+  if (!player._grabber) {
+    player._grabber = this.matter.add.circle(
+      player.position.x,
+      player.position.y - PLAYER_HEIGHT / 2,
+      10
+    );
+
+    this.matter.applyForce(player._grabber, { x: 0.03, y: -0.03 });
+  }
+}
+
+function attachPlayerToChicken(player, chicken) {
+  player._isAttached = true;
+  this.matter.add.spring(player, chicken, 300, 0.2);
 }
 
 function createChickens() {
@@ -155,10 +190,4 @@ function updateChicken() {
       }
     }
   });
-}
-
-// En attente d'utilisation
-function attachPlayerToChicken(player, chicken) {
-  player._isAttached = true;
-  this.matter.add.spring(player, chicken, 300, 0.2);
 }
