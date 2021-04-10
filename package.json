@@ -4,7 +4,7 @@
   "description": "lecacacécacalepipicépipi",
   "main": "main.js",
   "scripts": {
-    "start": "concurrently \"node main.js\" \"parcel src/ts/script.ts\""
+    "start": "concurrently --kill-others \"node main.js\" \"parcel src/ts/script.ts\""
   },
   "repository": {
     "type": "git",
@@ -18,11 +18,11 @@
   "homepage": "https://github.com/bcalou/hitboxmaker-2021-vanille#readme",
   "dependencies": {
     "express": "^4.17.1",
-    "parcel": "^2.0.0-beta.2",
     "phaser": "^3.54.0",
     "socket.io": "^4.0.1"
   },
   "devDependencies": {
+    "parcel": "^2.0.0-beta.2",
     "concurrently": "^6.0.1"
   }
 }
