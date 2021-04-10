@@ -3,8 +3,6 @@ import 'phaser';
  *
  * capter les inputs manette
  *
- * afficher direction grapin
- *
  * lancer un grappin dans une direction
  *
  * accrocher legrapin joueur-----(grappin)-----poule
@@ -16,6 +14,8 @@ import 'phaser';
  * countdown depart
  *
  * ajout joueur 2/n
+ *
+ * afficher direction grapin
  *
  * rembobiner / débobiner grappin
  *
@@ -92,7 +92,8 @@ function update(time, delta) {
   }
 
   updateChicken.call(this);
-  updatePlayers.call(this);
+  checkGrabberDistance.call(this);
+  checkGrabberCollision.call(this);
 }
 
 function createPlayers() {
@@ -106,7 +107,7 @@ function createPlayers() {
   setInterval(() => fire.call(this, this.player), 1000);
 }
 
-function updatePlayers() {
+function checkGrabberDistance() {
   if (
     this.player._grabber &&
     Phaser.Math.Distance.BetweenPoints(
@@ -119,12 +120,19 @@ function updatePlayers() {
   }
 }
 
+function checkGrabberCollision() {}
+
 function fire(player) {
   if (!player._grabber) {
     player._grabber = this.matter.add.circle(
       player.position.x,
       player.position.y - PLAYER_HEIGHT / 2,
-      10
+      10,
+      {
+        onCollideCallback: (collision) => {
+          console.log(collision);
+        },
+      }
     );
 
     this.matter.applyForce(player._grabber, { x: 0.03, y: -0.03 });
