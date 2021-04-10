@@ -4,7 +4,7 @@
   "description": "lecacacécacalepipicépipi",
   "main": "main.js",
   "scripts": {
-    "start": "concurrently \"gulp\" \"node main.js\""
+    "start": "concurrently \"node main.js\" \"parcel src/ts/script.ts\""
   },
   "repository": {
     "type": "git",
@@ -18,23 +18,11 @@
   "homepage": "https://github.com/bcalou/hitboxmaker-2021-vanille#readme",
   "dependencies": {
     "express": "^4.17.1",
-    "gulp": "^4.0.2",
+    "parcel": "^2.0.0-beta.2",
     "phaser": "^3.54.0",
     "socket.io": "^4.0.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.13.15",
-    "@babel/preset-env": "^7.13.15",
-    "babelify": "^10.0.0",
-    "browserify": "^17.0.0",
-    "concurrently": "^6.0.1",
-    "fancy-log": "^1.3.3",
-    "gulp-babel": "^8.0.0",
-    "gulp-clean": "^0.4.0",
-    "gulp-typescript": "^6.0.0-alpha.1",
-    "tsify": "^5.0.2",
-    "typescript": "^4.2.4",
-    "vinyl-source-stream": "^2.0.0",
-    "watchify": "^4.0.0"
+    "concurrently": "^6.0.1"
   }
 }

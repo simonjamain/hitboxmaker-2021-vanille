@@ -1,3 +1,3 @@
-import { Game } from 'phaser';
+import 'phaser';
 
-console.log(Game);
+console.log(Phaser.Actions);
