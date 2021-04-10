@@ -1,4 +1,4 @@
-import "phaser";
+import 'phaser';
 /**
  *
  * !!!OK!!! capter les inputs manette
@@ -44,7 +44,7 @@ var config = {
   height: 1080,
   scale: {
     mode: Phaser.Scale.FIT,
-    parent: "poulepull",
+    parent: 'poulepull',
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: 1920,
     height: 1080,
@@ -52,9 +52,9 @@ var config = {
   input: {
     gamepad: true,
   },
-  backgroundColor: "#000000",
+  backgroundColor: '#000000',
   physics: {
-    default: "matter",
+    default: 'matter',
     matter: {
       gravity: {
         y: 0.8,
@@ -100,15 +100,19 @@ var rnd = Phaser.Math.RND;
 
 function preload() {
   for (let i = 1; i <= 9; i++) {
-    this.load.audio("cri_" + i, "sound/cri_" + i + ".mp3");
+    this.load.audio('cri_' + i, 'sound/cri_' + i + '.mp3');
   }
+
+  this.load.audio('music', 'sound/music.mp3');
+  this.load.audio('wings', 'sound/wings.mp3');
+  this.load.audio('bg', 'sound/bg.mp3');
 }
 
 function create() {
   //fullscreen avec F
-  var FKey = this.input.keyboard.addKey("F");
+  var FKey = this.input.keyboard.addKey('F');
   FKey.on(
-    "down",
+    'down',
     function () {
       if (this.scale.isFullscreen) {
         this.scale.stopFullscreen();
@@ -139,6 +143,9 @@ function create() {
   //this.cameras.main.setDeadzone(this.scale.width * 1.5);
   //this.matter.world.setBounds(0, -100 * config.height, config.width, config.height * 100);
   createChickens.call(this);
+  this.sound.play('music', { volume: 0.25, loop: true });
+  this.sound.play('wings', { volume: 0.25, loop: true });
+  this.sound.play('bg', { volume: 0.15, loop: true });
 }
 
 function update(time, delta) {
@@ -205,7 +212,7 @@ function checkGrabberDistance(player) {
 
 function createPlayers() {
   this.players = [];
-  this.input.gamepad.once("connected", (pad) => {
+  this.input.gamepad.once('connected', (pad) => {
     this.input.gamepad.gamepads.forEach((pad, index) => {
       createPlayer.call(this, pad, index);
     });
@@ -234,7 +241,7 @@ function fire(player) {
     {
       onCollideCallback: (collision) => {
         // Si l'élément visé est chicken
-        if (collision.bodyA.label === "chicken") {
+        if (collision.bodyA.label === 'chicken') {
           if (player._grabber) {
             this.matter.world.remove(player._grabber);
             delete player._grabber;
@@ -308,9 +315,7 @@ function attachPlayerToChicken(player, chicken) {
 }
 
 function playChickenSound() {
-  // this.sound.play('cri1');
-  // let sfx = this.sound.add('cri1');
-  // sfx.play();
+  this.sound.play('cri_' + rnd.between(1, 9), { volume: 0.5 });
 }
 
 function createChickens() {
@@ -334,7 +339,7 @@ function generateChicken() {
       collisionFilter: {
         group: this.chickenGroup,
       },
-      label: "chicken",
+      label: 'chicken',
     }
   );
 
