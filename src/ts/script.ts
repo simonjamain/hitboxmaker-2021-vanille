@@ -66,7 +66,8 @@ const CHICKEN_WING_FORCE = { x: 0.03, y: -0.2 };
 const PLAYER_WIDTH = 100;
 const PLAYER_HEIGHT = 150;
 
-const MAX_GRABBER_DISTANCE = 700;
+const MAX_GRABBER_DISTANCE = 900;
+const GRABBER_STIFFNESS = 0.3;
 
 var game = new Phaser.Game(config);
 var rnd = Phaser.Math.RND;
@@ -163,24 +164,38 @@ function fire(player) {
       10,
       {
         onCollideCallback: (collision) => {
+          // Si l'élément visé est chicken
           if (collision.bodyA.label === 'chicken') {
-            attachPlayerToChicken.call(this, player, collision.bodyA);
+            this.matter.world.remove(player._grabber);
+            delete player._grabber;
+
+            // si ce n'est pas le chicken déjà grabbé
+            if (
+              !player._spring ||
+              player._spring.bodyB.id !== collision.bodyA.id
+            ) {
+              attachPlayerToChicken.call(this, player, collision.bodyA);
+            }
           }
         },
       }
     );
 
-    this.matter.applyForce(player._grabber, { x: 0.03, y: -0.03 });
+    this.matter.applyForce(player._grabber, { x: rnd.sign() * 0.03, y: -0.03 });
   }
 }
 
 function attachPlayerToChicken(player, chicken) {
-  player._isAttached = true;
-  this.matter.add.spring(
+  // Remove existing spring
+  if (player._spring) {
+    this.matter.world.remove(player._spring);
+  }
+
+  player._spring = this.matter.add.spring(
     player,
     chicken,
     Phaser.Math.Distance.BetweenPoints(player.position, chicken.position) - 100,
-    0.2
+    GRABBER_STIFFNESS
   );
 }
 
