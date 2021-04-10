@@ -104,7 +104,17 @@ function updatePlayers() {
   this.players.forEach((player) => {
     var pad = player._pad;
 
-    let leftStick = { x: pad.axes[0].getValue(), y: pad.axes[1].getValue() };
+    let leftStick = new Phaser.Math.Vector2(
+      pad.axes[0].getValue(),
+      pad.axes[1].getValue()
+    );
+
+    let rightStick = new Phaser.Math.Vector2(
+      pad.axes[2].getValue(),
+      pad.axes[3].getValue()
+    );
+
+    let leftTrigger = pad.buttons[6].value;
 
     checkGrabberDistance.call(this, player);
   });
