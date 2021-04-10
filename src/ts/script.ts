@@ -67,7 +67,15 @@ const PLAYER_WIDTH = 100;
 const PLAYER_HEIGHT = 150;
 
 const MAX_GRABBER_DISTANCE = 900;
-const GRABBER_STIFFNESS = 0.3;
+const GRABBER_THROW_FORCE = 0.03;
+
+const SPRING_INITIAL_GAP = 100;
+const SPRING_ADJUSTMENT_SPEED = 250;
+const SPRING_MAX_LENGTH = 700;
+const SPRING_STIFFNESS = 0.3;
+const SPRING_HORIZONTAL_MOVE_FACTOR = 0.01;
+
+const PAD_TRIGGER_THRESHOLD = 0.8;
 
 var game = new Phaser.Game(config);
 var rnd = Phaser.Math.RND;
@@ -97,25 +105,40 @@ function update(time, delta) {
     generateChicken.call(this);
   }
 
-  updatePlayers.call(this);
+  updatePlayers.call(this, delta);
   updateChicken.call(this);
 }
 
-function updatePlayers() {
+function updatePlayers(delta) {
   this.players.forEach((player) => {
     var pad = player._pad;
 
-    let leftStick = new Phaser.Math.Vector2(
+    player._leftStick = new Phaser.Math.Vector2(
       pad.axes[0].getValue(),
       pad.axes[1].getValue()
     );
 
-    let rightStick = new Phaser.Math.Vector2(
+    let _rightStick = new Phaser.Math.Vector2(
       pad.axes[2].getValue(),
       pad.axes[3].getValue()
     );
 
-    let leftTrigger = pad.buttons[6].value;
+    if (player._grabber) {
+      if (pad.buttons[6].value < PAD_TRIGGER_THRESHOLD) {
+        recallGrabber.call(this, player);
+      }
+    } else if (player._spring) {
+      if (pad.buttons[6].value < PAD_TRIGGER_THRESHOLD) {
+        release.call(this, player);
+      } else {
+        adjustSpringLength.call(this, player, delta);
+        applyAirControl.call(this, player);
+      }
+    } else {
+      if (pad.buttons[6].value > PAD_TRIGGER_THRESHOLD) {
+        fire.call(this, player);
+      }
+    }
 
     checkGrabberDistance.call(this, player);
   });
@@ -152,37 +175,69 @@ function createPlayer(pad) {
   player._pad = pad;
 
   this.players.push(player);
-  console.log(player);
-  setInterval(() => fire.call(this, player), 1000);
 }
 
 function fire(player) {
-  if (!player._grabber) {
-    player._grabber = this.matter.add.circle(
-      player.position.x,
-      player.position.y - PLAYER_HEIGHT / 2,
-      10,
-      {
-        onCollideCallback: (collision) => {
-          // Si l'élément visé est chicken
-          if (collision.bodyA.label === 'chicken') {
-            this.matter.world.remove(player._grabber);
-            delete player._grabber;
+  player._grabber = this.matter.add.circle(
+    player.position.x,
+    player.position.y - PLAYER_HEIGHT / 2,
+    10,
+    {
+      onCollideCallback: (collision) => {
+        // Si l'élément visé est chicken
+        if (collision.bodyA.label === 'chicken') {
+          this.matter.world.remove(player._grabber);
+          delete player._grabber;
 
-            // si ce n'est pas le chicken déjà grabbé
-            if (
-              !player._spring ||
-              player._spring.bodyB.id !== collision.bodyA.id
-            ) {
-              attachPlayerToChicken.call(this, player, collision.bodyA);
-            }
+          // si ce n'est pas le chicken déjà grabbé
+          if (
+            !player._spring ||
+            player._spring.bodyB.id !== collision.bodyA.id
+          ) {
+            attachPlayerToChicken.call(this, player, collision.bodyA);
           }
-        },
-      }
-    );
+        }
+      },
+    }
+  );
 
-    this.matter.applyForce(player._grabber, { x: rnd.sign() * 0.03, y: -0.03 });
-  }
+  const grabberForce = player._leftStick
+    .normalize()
+    .multiply(
+      new Phaser.Math.Vector2(GRABBER_THROW_FORCE, GRABBER_THROW_FORCE)
+    );
+  this.matter.applyForce(player._grabber, grabberForce);
+}
+
+function recallGrabber(player) {
+  this.matter.world.remove(player._grabber);
+  delete player._grabber;
+}
+
+function release(player) {
+  this.matter.world.remove(player._spring);
+  delete player._spring;
+}
+
+function adjustSpringLength(player, delta) {
+  // ajuster la longueur du grab en fonction de player._leftStick.y (multiplié par un constante)
+  player._spring.length = Phaser.Math.Clamp(
+    player._spring.length +
+      player._leftStick.y * ((SPRING_ADJUSTMENT_SPEED / 1000) * delta),
+    0,
+    SPRING_MAX_LENGTH
+  );
+}
+
+function applyAirControl(player) {
+  // appliquer une force horizontale sur le player en fonction de player._leftStick.x (multiplié par un constante)
+  this.matter.applyForce(
+    player,
+    new Phaser.Math.Vector2(
+      player._leftStick.x * SPRING_HORIZONTAL_MOVE_FACTOR,
+      0
+    )
+  );
 }
 
 function attachPlayerToChicken(player, chicken) {
@@ -194,8 +249,9 @@ function attachPlayerToChicken(player, chicken) {
   player._spring = this.matter.add.spring(
     player,
     chicken,
-    Phaser.Math.Distance.BetweenPoints(player.position, chicken.position) - 100,
-    GRABBER_STIFFNESS
+    Phaser.Math.Distance.BetweenPoints(player.position, chicken.position) -
+      SPRING_INITIAL_GAP,
+    SPRING_STIFFNESS
   );
 }
 
