@@ -69,6 +69,8 @@ var config = {
 };
 
 const CAMERA_SPEED = 0.05;
+const CAMERA_SMOOTHNESS = 0.05;
+const CAMERA_INITIAL_POSITION = 750;
 
 const CHICKEN_INTERVAL_MS = 900;
 const CHICKEN_SIZE = 100;
@@ -183,7 +185,25 @@ function update(time, delta) {
   updatePlayers.call(this, delta);
   updateChicken.call(this);
 
-  this.cameras.main.scrollY = this.cameras.main.scrollY - delta * CAMERA_SPEED;
+  // this.cameras.main.scrollY = this.cameras.main.scrollY - delta * CAMERA_SPEED;
+  updateCamera.call(this, delta);
+}
+
+function updateCamera(delta) {
+  if (this.players.length) {
+    console.log(this.players[0].position.y);
+    let Ymean = Phaser.Math.Average(
+      this.players.map((player) =>
+        Math.min(player.position.y, CAMERA_INITIAL_POSITION)
+      )
+    );
+
+    this.cameras.main.scrollY = Phaser.Math.Linear(
+      Ymean - config.height / 2,
+      this.cameras.main.scrollY,
+      delta * CAMERA_SMOOTHNESS
+    );
+  }
 }
 
 function createAnimations() {
