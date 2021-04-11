@@ -83,16 +83,17 @@ const CHICKEN_MIN_SPAWN_HEIGHT = 800;
 const PLAYER_WIDTH = 100;
 const PLAYER_HEIGHT = 150;
 const PLAYER_DEATH_OFFSET = 100;
+const PLAYER_JUMP_RATIO = 0.5;
 
 const MAX_GRABBER_DISTANCE = 900;
 const GRABBER_THROW_FORCE = 0.03;
 
 const SPRING_ATTACHMENT_RATIO = 0.7; // between 0 & 1
-const SPRING_ADJUSTMENT_SPEED = 250;
+const SPRING_ADJUSTMENT_SPEED = 400;
 const SPRING_MAX_LENGTH = 700;
-const SPRING_MIN_LENGTH = CHICKEN_SIZE + PLAYER_HEIGHT / 2;
+const SPRING_MIN_LENGTH = CHICKEN_SIZE / 2 + PLAYER_HEIGHT / 2;
 const SPRING_STIFFNESS = 0.3;
-const SPRING_HORIZONTAL_MOVE_FACTOR = 0.002;
+const SPRING_HORIZONTAL_MOVE_FACTOR = 0.01;
 
 const PAD_TRIGGER_THRESHOLD = 0.8;
 
@@ -169,7 +170,7 @@ function create() {
 function update(time, delta) {
   this.text.setText(
     this.scores.map((score, index) => {
-      return `Joueur ${index + 1} : ${score.points}pts`;
+      return `Joueur ${index + 1} : ${score.points / 100}m`;
     })
   );
 
@@ -222,6 +223,7 @@ function updatePlayers(delta) {
   this.players.forEach((player) => {
     updatePlayerScore.call(this, player);
     checkIfDead.call(this, player);
+    checkGrabberDistance.call(this, player);
 
     var pad = player._pad;
 
@@ -251,8 +253,6 @@ function updatePlayers(delta) {
         fire.call(this, player);
       }
     }
-
-    checkGrabberDistance.call(this, player);
   });
 }
 
@@ -314,7 +314,12 @@ function createPlayer(pad, index) {
     config.width * startingPositions[index],
     this.cameras.main.y + 1080 - PLAYER_HEIGHT / 2,
     PLAYER_WIDTH,
-    PLAYER_HEIGHT
+    PLAYER_HEIGHT,
+    {
+      collisionFilter: {
+        group: this.mainGroup,
+      },
+    }
   );
   player._pad = pad;
   player._score = this.scores[index] = { points: 0 };
@@ -363,8 +368,13 @@ function recallGrabber(player) {
 }
 
 function release(player) {
+  const chicken = player._spring.bodyB;
+  chicken._targetY += 1000;
+
   this.matter.world.remove(player._spring);
   delete player._spring;
+
+  jump.call(this, player);
 }
 
 function adjustSpringLength(player, delta) {
@@ -374,6 +384,35 @@ function adjustSpringLength(player, delta) {
       player._leftStick.y * ((SPRING_ADJUSTMENT_SPEED / 1000) * delta),
     SPRING_MIN_LENGTH,
     SPRING_MAX_LENGTH
+  );
+
+  if (player._spring.length === SPRING_MIN_LENGTH) {
+    reachChicken.call(this, player);
+  }
+}
+
+function reachChicken(player) {
+  const chicken = player._spring.bodyB;
+
+  chicken._targetY += 1000;
+
+  this.matter.world.remove(player._spring);
+  delete player._spring;
+
+  jump.call(this, player);
+}
+
+function jump(player) {
+  console.log(
+    player._leftStick
+      .normalize()
+      .multiply({ x: PLAYER_JUMP_RATIO, y: -PLAYER_JUMP_RATIO })
+  );
+  this.matter.applyForce(
+    player,
+    player._leftStick
+      .normalize()
+      .multiply({ x: PLAYER_JUMP_RATIO, y: -PLAYER_JUMP_RATIO })
   );
 }
 
@@ -409,7 +448,6 @@ function attachPlayerToChicken(player, chicken) {
 }
 
 function createChickens() {
-  this.chickenGroup = this.matter.world.nextGroup(true);
   this.chickens = [];
 }
 
@@ -431,7 +469,7 @@ function generateChicken() {
     CHICKEN_SIZE / 2,
     {
       collisionFilter: {
-        group: this.chickenGroup,
+        group: this.mainGroup,
       },
       label: 'chicken',
     }
