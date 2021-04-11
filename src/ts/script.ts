@@ -1,4 +1,4 @@
-import 'phaser';
+import "phaser";
 /**
  *
  * !!!OK!!! capter les inputs manette
@@ -42,7 +42,7 @@ var config = {
   height: 1080,
   scale: {
     mode: Phaser.Scale.FIT,
-    parent: 'poulepull',
+    parent: "poulepull",
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: 1920,
     height: 1080,
@@ -50,9 +50,9 @@ var config = {
   input: {
     gamepad: true,
   },
-  backgroundColor: '#53d8ed',
+  backgroundColor: "#53d8ed",
   physics: {
-    default: 'matter',
+    default: "matter",
     matter: {
       gravity: {
         y: 0.8,
@@ -85,7 +85,7 @@ const CHICKEN_MIN_SPAWN_HEIGHT = 800;
 const PLAYER_WIDTH = 100;
 const PLAYER_HEIGHT = 150;
 const PLAYER_DEATH_OFFSET = 100;
-const PLAYER_JUMP_RATIO = 0.5;
+const PLAYER_JUMP_RATIO = 0.3;
 
 const MAX_GRABBER_DISTANCE = 900;
 const GRABBER_THROW_FORCE = 0.03;
@@ -104,18 +104,26 @@ var rnd = Phaser.Math.RND;
 
 function preload() {
   for (let i = 1; i <= 9; i++) {
-    this.load.audio('cri_' + i, 'sound/cri_' + i + '.mp3');
+    this.load.audio("cri_" + i, "sound/cri_" + i + ".mp3");
   }
 
   for (let i = 1; i <= 7; i++) {
-    this.load.audio('death_' + i, 'sound/death_' + i + '.mp3');
+    this.load.audio("death_" + i, "sound/death_" + i + ".mp3");
   }
 
-  this.load.audio('music', 'sound/music.mp3');
-  this.load.audio('wings', 'sound/wings.mp3');
-  this.load.audio('bg', 'sound/bg.mp3');
+  this.load.audio("music", "sound/music.mp3");
+  this.load.audio("wings", "sound/wings.mp3");
+  this.load.audio("bg", "sound/bg.mp3");
 
-  this.load.spritesheet('chicken', 'img/chicken.png', {
+  this.load.image("player", "img/player.png");
+  this.load.image("batte", "img/batte.png");
+  this.load.image("grabber", "img/grabber.png");
+  this.load.image("grenier", "img/grenier.png");
+  this.load.image("pieds", "img/pieds.png");
+  this.load.image("sticky", "img/sticky.png");
+  this.load.image("appuyezPourCommencer", "img/appuyezPourCommencer.png");
+
+  this.load.spritesheet("chicken", "img/chicken.png", {
     frameWidth: 200,
     frameHeight: 200,
   });
@@ -128,14 +136,15 @@ function create() {
     .text(32, 32)
     .setScrollFactor(0)
     .setFontSize(32)
-    .setColor('#000000');
+    .setColor("#000000");
 
   createAnimations.call(this);
+  createScene.call(this);
 
   //fullscreen avec F
-  var FKey = this.input.keyboard.addKey('F');
+  var FKey = this.input.keyboard.addKey("F");
   FKey.on(
-    'down',
+    "down",
     function () {
       if (this.scale.isFullscreen) {
         this.scale.stopFullscreen();
@@ -145,6 +154,14 @@ function create() {
     },
     this
   );
+
+  function createScene() {
+    this.add.image(
+      config.width / 2,
+      config.height + config.height / 2 + 250,
+      "grenier"
+    );
+  }
 
   createPlayers.call(this);
   this.cameras.main.scrollY = config.height;
@@ -166,9 +183,9 @@ function create() {
   //this.cameras.main.setDeadzone(this.scale.width * 1.5);
   //this.matter.world.setBounds(0, -100 * config.height, config.width, config.height * 100);
   createChickens.call(this);
-  this.sound.play('music', { volume: 0.15, loop: true });
-  this.sound.play('wings', { volume: 0.5, loop: true });
-  this.sound.play('bg', { volume: 0.3, loop: true });
+  this.sound.play("music", { volume: 0.15, loop: true });
+  this.sound.play("wings", { volume: 0.5, loop: true });
+  this.sound.play("bg", { volume: 0.3, loop: true });
 }
 
 function update(time, delta) {
@@ -210,32 +227,32 @@ function createAnimations() {
   const framerate = 15;
 
   this.anims.create({
-    key: 'idle',
-    frames: this.anims.generateFrameNumbers('chicken', {
+    key: "idle",
+    frames: this.anims.generateFrameNumbers("chicken", {
       frames: [0, 1],
     }),
     frameRate: framerate,
     repeat: -1,
   });
   this.anims.create({
-    key: 'flap',
-    frames: this.anims.generateFrameNumbers('chicken', {
+    key: "flap",
+    frames: this.anims.generateFrameNumbers("chicken", {
       frames: [1, 2, 3, 4, 5],
     }),
     frameRate: framerate * 2,
     repeat: 0,
   });
   this.anims.create({
-    key: 'flop',
-    frames: this.anims.generateFrameNumbers('chicken', {
+    key: "flop",
+    frames: this.anims.generateFrameNumbers("chicken", {
       frames: [6, 7],
     }),
     frameRate: framerate,
     repeat: 0,
   });
   this.anims.create({
-    key: 'full',
-    frames: this.anims.generateFrameNumbers('chicken'),
+    key: "full",
+    frames: this.anims.generateFrameNumbers("chicken"),
     frameRate: framerate,
     repeat: -1,
   });
@@ -244,6 +261,7 @@ function createAnimations() {
 function updatePlayers(delta) {
   this.players.forEach((player) => {
     updatePlayerScore.call(this, player);
+    updatePlayerSprite.call(this, player);
     checkIfDead.call(this, player);
     checkGrabberDistance.call(this, player);
 
@@ -278,6 +296,12 @@ function updatePlayers(delta) {
   });
 }
 
+function updatePlayerSprite(player) {
+  //SPRITE POSITION UPDATE
+  player._sprite.setPosition(player.position.x, player.position.y);
+  player._sprite.rotation = player.angle;
+}
+
 function updatePlayerScore(player) {
   player._score.points = Math.max(
     Math.floor(-(player.position.y - player._startingPositionY)),
@@ -298,7 +322,7 @@ function checkIfDead(player) {
     }
     this.matter.world.remove(player);
     this.players = this.players.filter((_player) => _player.id !== player.id);
-    this.sound.play('death_' + rnd.between(1, 7), { volume: 0.5 });
+    this.sound.play("death_" + rnd.between(1, 7), { volume: 0.5 });
 
     if (this.players.length === 0) {
       end.call(this);
@@ -322,7 +346,7 @@ function checkGrabberDistance(player) {
 function createPlayers() {
   this.players = [];
   this.scores = [];
-  this.input.gamepad.once('connected', (pad) => {
+  this.input.gamepad.once("connected", (pad) => {
     this.input.gamepad.gamepads.forEach((pad, index) => {
       createPlayer.call(this, pad, index);
     });
@@ -343,6 +367,13 @@ function createPlayer(pad, index) {
       },
     }
   );
+
+  player._sprite = this.add.image(
+    config.width * startingPositions[index],
+    this.cameras.main.y + 1080 - PLAYER_HEIGHT / 2,
+    "player"
+  );
+
   player._pad = pad;
   player._score = this.scores[index] = { points: 0 };
   player._startingPositionY = player.position.y;
@@ -358,7 +389,7 @@ function fire(player) {
     {
       onCollideCallback: (collision) => {
         // Si l'élément visé est chicken
-        if (collision.bodyA.label === 'chicken') {
+        if (collision.bodyA.label === "chicken") {
           if (player._grabber) {
             this.matter.world.remove(player._grabber);
             delete player._grabber;
@@ -462,7 +493,7 @@ function attachPlayerToChicken(player, chicken) {
     SPRING_STIFFNESS
   );
 
-  this.sound.play('cri_' + rnd.between(1, 9), { volume: 0.5 });
+  this.sound.play("cri_" + rnd.between(1, 9), { volume: 0.5 });
 }
 
 function createChickens() {
@@ -489,12 +520,12 @@ function generateChicken() {
       collisionFilter: {
         group: this.mainGroup,
       },
-      label: 'chicken',
+      label: "chicken",
     }
   );
 
   chicken._sprite = this.add.sprite(600, 370);
-  chicken._sprite.play('full');
+  chicken._sprite.play("full");
 
   chicken._targetY = targetY;
   chicken._forceVector = {
@@ -536,11 +567,11 @@ function updateChicken() {
       if (chicken.position.y > chicken._targetY) {
         // console.log("chicken.position.y", chicken.position.y);
         this.matter.applyForce(chicken, chicken._forceVector);
-        chicken._sprite.play('flap');
+        chicken._sprite.play("flap");
       } else if (chicken._prevVelocityY < 0 && chicken.velocity.y > 0) {
         //apogée
-        chicken._sprite.play('flop');
-        chicken._sprite.anims.chain('idle');
+        chicken._sprite.play("flop");
+        chicken._sprite.anims.chain("idle");
       }
     }
 
@@ -550,5 +581,5 @@ function updateChicken() {
 }
 
 function end() {
-  console.log('game over');
+  console.log("game over");
 }
