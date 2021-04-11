@@ -88,8 +88,8 @@ const PLAYER_JUMP_RATIO = 0.5;
 const MAX_GRABBER_DISTANCE = 900;
 const GRABBER_THROW_FORCE = 0.03;
 
-const SPRING_ATTACHMENT_RATIO = 0.7; // between 0 & 1
-const SPRING_ADJUSTMENT_SPEED = 400;
+const SPRING_ATTACHMENT_RATIO = 0.9; // between 0 & 1
+const SPRING_ADJUSTMENT_SPEED = 350;
 const SPRING_MAX_LENGTH = 700;
 const SPRING_MIN_LENGTH = CHICKEN_SIZE / 2 + PLAYER_HEIGHT / 2;
 const SPRING_STIFFNESS = 0.3;
@@ -120,6 +120,8 @@ function preload() {
 }
 
 function create() {
+  this.mainGroup = this.matter.world.nextGroup(true);
+
   this.text = this.add
     .text(32, 32)
     .setScrollFactor(0)
@@ -162,7 +164,7 @@ function create() {
   //this.cameras.main.setDeadzone(this.scale.width * 1.5);
   //this.matter.world.setBounds(0, -100 * config.height, config.width, config.height * 100);
   createChickens.call(this);
-  this.sound.play('music', { volume: 0.25, loop: true });
+  this.sound.play('music', { volume: 0.15, loop: true });
   this.sound.play('wings', { volume: 0.5, loop: true });
   this.sound.play('bg', { volume: 0.3, loop: true });
 }
@@ -369,7 +371,7 @@ function recallGrabber(player) {
 
 function release(player) {
   const chicken = player._spring.bodyB;
-  chicken._targetY += 1000;
+  chicken._targetY += 100;
 
   this.matter.world.remove(player._spring);
   delete player._spring;
@@ -386,9 +388,9 @@ function adjustSpringLength(player, delta) {
     SPRING_MAX_LENGTH
   );
 
-  if (player._spring.length === SPRING_MIN_LENGTH) {
-    reachChicken.call(this, player);
-  }
+  // if (player._spring.length === SPRING_MIN_LENGTH) {
+  //   reachChicken.call(this, player);
+  // }
 }
 
 function reachChicken(player) {
@@ -403,16 +405,12 @@ function reachChicken(player) {
 }
 
 function jump(player) {
-  console.log(
-    player._leftStick
-      .normalize()
-      .multiply({ x: PLAYER_JUMP_RATIO, y: -PLAYER_JUMP_RATIO })
-  );
+  console.log(player.velocity);
   this.matter.applyForce(
     player,
     player._leftStick
       .normalize()
-      .multiply({ x: PLAYER_JUMP_RATIO, y: -PLAYER_JUMP_RATIO })
+      .multiply({ x: PLAYER_JUMP_RATIO, y: PLAYER_JUMP_RATIO })
   );
 }
 
