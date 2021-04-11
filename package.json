@@ -2,9 +2,9 @@
   "name": "poule-pull",
   "version": "1.0.0",
   "description": "lecacacécacalepipicépipi",
-  "main": "main.js",
   "scripts": {
-    "start": "concurrently --kill-others \"node main.js\" \"parcel src/ts/script.ts\""
+    "start": "rm -rf dist && mkdir dist && cp -R public/* dist && parcel src/index.html",
+    "build": "rm -rf dist && mkdir dist && cp -R public/* dist && parcel build src/index.html"
   },
   "repository": {
     "type": "git",
