@@ -9,13 +9,11 @@ import 'phaser';
  *
  * !!!OK!!! relacher grappin
  *
- * fullscreen
- *
- * mourrir joueur
- *
- * countdown depart
+ * !!!OK!!! fullscreen
  *
  * !!!OK!!! ajout joueur 2/n
+ *
+ * mourrir joueur
  *
  * afficher direction grapin
  * faire que les poules sa descend (ou que on monte)
@@ -82,11 +80,11 @@ const CHICKEN_WING_FORCE = { x: 0.03, y: -0.2 };
 
 const PLAYER_WIDTH = 100;
 const PLAYER_HEIGHT = 150;
+const PLAYER_DEATH_OFFSET = 100;
 
 const MAX_GRABBER_DISTANCE = 900;
 const GRABBER_THROW_FORCE = 0.03;
 
-const SPRING_INITIAL_GAP = 100;
 const SPRING_ADJUSTMENT_SPEED = 250;
 const SPRING_MAX_LENGTH = 700;
 const SPRING_MIN_LENGTH = CHICKEN_SIZE / 2 + PLAYER_HEIGHT / 2;
@@ -103,12 +101,29 @@ function preload() {
     this.load.audio('cri_' + i, 'sound/cri_' + i + '.mp3');
   }
 
+  for (let i = 1; i <= 7; i++) {
+    this.load.audio('death_' + i, 'sound/death_' + i + '.mp3');
+  }
+
   this.load.audio('music', 'sound/music.mp3');
   this.load.audio('wings', 'sound/wings.mp3');
   this.load.audio('bg', 'sound/bg.mp3');
+
+  this.load.spritesheet('chicken', 'img/chicken.png', {
+    frameWidth: 1600,
+    frameHeight: 200,
+  });
 }
 
 function create() {
+  this.text = this.add
+    .text(32, 32)
+    .setScrollFactor(0)
+    .setFontSize(32)
+    .setColor('#ffffff');
+
+  createAnimations.call(this);
+
   //fullscreen avec F
   var FKey = this.input.keyboard.addKey('F');
   FKey.on(
@@ -149,6 +164,12 @@ function create() {
 }
 
 function update(time, delta) {
+  this.text.setText(
+    this.players.map((player, index) => {
+      return `Joueur ${index + 1} - ${player._score}`;
+    })
+  );
+
   if (Math.random() < delta / CHICKEN_INTERVAL_MS) {
     generateChicken.call(this);
   }
@@ -156,14 +177,28 @@ function update(time, delta) {
   updatePlayers.call(this, delta);
   updateChicken.call(this);
 
-  if (time > 3000) {
-    this.cameras.main.scrollY =
-      this.cameras.main.scrollY - delta * CAMERA_SPEED;
-  }
+  this.cameras.main.scrollY = this.cameras.main.scrollY - delta * CAMERA_SPEED;
+}
+
+function createAnimations() {
+  this.anims.create({
+    key: 'idle',
+    frames: this.anims.generateFrameNumbers('chicken', {
+      frames: [2, 3],
+    }),
+    frameRate: 10,
+    repeat: -1,
+  });
+
+  const cody = this.add.sprite(600, 370);
+  cody.play('idle');
 }
 
 function updatePlayers(delta) {
   this.players.forEach((player) => {
+    updatePlayerScore.call(this, player);
+    checkIfDead.call(this, player);
+
     var pad = player._pad;
 
     player._leftStick = new Phaser.Math.Vector2(
@@ -195,6 +230,34 @@ function updatePlayers(delta) {
 
     checkGrabberDistance.call(this, player);
   });
+}
+
+function updatePlayerScore(player) {
+  player._score = Math.max(
+    Math.floor(-(player.position.y - player._startingPositionY)),
+    player._score
+  );
+}
+
+function checkIfDead(player) {
+  if (
+    player.position.y >
+    this.cameras.main.scrollY + config.height + PLAYER_DEATH_OFFSET
+  ) {
+    if (player._grabber) {
+      this.matter.world.remove(player._grabber);
+    }
+    if (player._spring) {
+      this.matter.world.remove(player._spring);
+    }
+    this.matter.world.remove(player);
+    this.players = this.players.filter((_player) => _player.id !== player.id);
+    this.sound.play('death_' + rnd.between(1, 7), { volume: 0.5 });
+
+    if (this.players.length === 0) {
+      end.call(this);
+    }
+  }
 }
 
 function checkGrabberDistance(player) {
@@ -229,6 +292,8 @@ function createPlayer(pad, index) {
     PLAYER_HEIGHT
   );
   player._pad = pad;
+  player._score = 0;
+  player._startingPositionY = player.position.y;
 
   this.players.push(player);
 }
@@ -311,10 +376,6 @@ function attachPlayerToChicken(player, chicken) {
     SPRING_STIFFNESS
   );
 
-  playChickenSound.call(this);
-}
-
-function playChickenSound() {
   this.sound.play('cri_' + rnd.between(1, 9), { volume: 0.5 });
 }
 
@@ -376,4 +437,8 @@ function updateChicken() {
       }
     }
   });
+}
+
+function end() {
+  console.log('game over');
 }
